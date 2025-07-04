@@ -27,7 +27,7 @@ Our ecosystem includes:
 | Project | Description |
 |--------|-------------|
 | [osc-sdk-python](https://github.com/outscale/osc-sdk-python) | Official Python SDK for OUTSCALE APIs |
-| [oapi-cli](https://github.com/outscale/osc-cli) | Command-line interface to interact with OUTSCALE services |
+| [oapi-cli](https://github.com/outscale/oapi-cli) | Command-line interface to interact with OUTSCALE services |
 | [vscode-osc-viewer](https://github.com/outscale/vscode-osc-viewer) | OUTSCALE plugin for VSCode |
 | [UAR](https://github.com/outscale/UAR) | User Access-rights Review |
 
