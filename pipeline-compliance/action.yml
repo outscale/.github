@@ -1,0 +1,82 @@
+name: 'Pipeline compliance scan'
+description: 'Run pipeline compliance scan (gitleaks + supply-chain governance)'
+
+inputs:
+  plumber-threshold:
+    description: 'Plumber compliance threshold (0-100)'
+    required: false
+    default: '80'
+  plumber-config-file:
+    description: 'Path to .plumber.yaml config file'
+    required: false
+  upload-sarif:
+    description: 'Upload SARIF results to GitHub Security tab'
+    required: false
+    default: ${{ github.event.repository.visibility == 'public' }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install gitleaks
+      shell: bash
+      env:
+        GITLEAKS_VERSION: v8.24.0
+        GITLEAKS_SHA256: cb49b7de5ee986510fe8666ca0273a6cc15eb82571f2f14832c9e8920751f3a4
+      run: |
+        tarball="gitleaks_${GITLEAKS_VERSION#v}_linux_x64.tar.gz"
+        curl -sSL --retry 3 --retry-delay 2 --connect-timeout 10 --max-time 60 "https://github.com/gitleaks/gitleaks/releases/download/${GITLEAKS_VERSION}/${tarball}" -o "$tarball"
+        echo "${GITLEAKS_SHA256}  ${tarball}" | sha256sum -c -
+        mkdir -p "$HOME/.local/bin"
+
+        tar xzf "$tarball" -C "/tmp" gitleaks
+        mv /tmp/gitleaks $HOME/.local/bin/gitleaks_unwrapped
+        cat > "$HOME/.local/bin/gitleaks" <<'GITLEAKS_SCRIPT'
+        #!/bin/bash
+        args=()
+        skip_next=false
+
+        for arg in "${@:1}"; do
+            if $skip_next; then
+                # Previous argument was "--source" (separate form): replace this value
+                args+=("$SOURCE_VALUE")
+                skip_next=false
+                continue
+            fi
+
+            case "$arg" in
+                --source=*)
+                    # Form: --source=oldvalue  =>  --source=$SOURCE_VALUE
+                    args+=("--source=$SOURCE_VALUE")
+                    ;;
+                --source)
+                    # Form: --source oldvalue  =>  --source $SOURCE_VALUE
+                    args+=("--source")
+                    skip_next=true
+                    ;;
+                *)
+                    args+=("$arg")
+                    ;;
+            esac
+        done
+
+        exec "$HOME/.local/bin/gitleaks_unwrapped" "${args[@]}"
+        GITLEAKS_SCRIPT
+
+        chmod +x "$HOME/.local/bin/gitleaks"
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+        "$HOME/.local/bin/gitleaks" version
+
+    - name: Computing config path
+      shell: bash
+      run: |
+        path=${{ github.action_path }}/plumber.yaml
+        echo "plumber-config-file=$path" >> $GITHUB_ENV
+
+    - uses: getplumber/plumber@1e15c4a702fb2bff00992cc2171aafdf50909b87 # v0.3.50
+      with:
+        threshold: ${{ inputs.plumber-threshold }}
+        config-file: ${{ inputs.plumber-config-file || env.plumber-config-file }}
+        upload-sarif: ${{ inputs.upload-sarif }}
+      env:
+        SOURCE_VALUE: ${{ github.workspace }}
+
