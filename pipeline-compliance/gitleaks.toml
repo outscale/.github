@@ -1,0 +1,32 @@
+title = "Outscale Gitleaks configuration"
+
+[extend]
+useDefault = true
+disabledRules = [ "generic-api-key"]
+
+[[rules]]
+id = "osc-access-key"
+regex = '''(?:^|[^A-Za-z0-9])([A-Z0-9]{20})(?:[^A-Za-z0-9]|$)'''
+secretGroup = 1
+entropy = 2.5
+
+[rules.allowlists]
+regexTarget = "match"
+regexes = [
+'''0123456789ABCDEFGHIJ''',
+'''ABCDEFGHIJ0123456789''',
+'''11112211111110000000''',
+]
+
+[[rules]]
+id = "osc-secret-key"
+regex = '''(?:^|[^A-Za-z0-9])([A-Z0-9]{40})(?:[^A-Za-z0-9]|$)'''
+secretGroup = 1
+entropy = 3.5
+
+[rules.allowlists]
+regexTarget = "match"
+regexes = [
+'''0000001111112222223333334444445555555666''',
+]
+
