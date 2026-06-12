@@ -22,6 +22,7 @@ github:
       # gitleaksPath: /usr/local/bin/gitleaks
       # Optional path to a custom gitleaks configuration file.
       # gitleaksConfigPath: /path/to/gitleaks.toml
+      gitleaksConfigPath: /home/runner/work/outscale/.github/pipline-compliance/gitleaks.toml
 
     # ===========================================
     # Actions must be pinned by commit SHA
