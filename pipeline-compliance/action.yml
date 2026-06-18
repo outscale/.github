@@ -13,6 +13,9 @@ inputs:
     description: 'Upload SARIF results to GitHub Security tab'
     required: false
     default: ${{ github.event.repository.visibility == 'public' }}
+  github-token:
+    description: 'Github Token'
+    default: ${{ github.token }}
 
 runs:
   using: composite
@@ -77,6 +80,7 @@ runs:
         threshold: ${{ inputs.plumber-threshold }}
         config-file: ${{ inputs.plumber-config-file || env.plumber-config-file }}
         upload-sarif: ${{ inputs.upload-sarif }}
+        github-token: ${{ inputs.github-token }}
       env:
         SOURCE_VALUE: ${{ github.workspace }}
 
