@@ -33,10 +33,6 @@ inputs:
     description: 'List of systems (comma-separated: outscale_oapi,outscale_oos,outscale_oks,...).'
     required: false
     default: 'outscale_oapi'
-  skip_token_revocation:
-    description: 'Skip auto-revoking the Vault token in the post-script sequence.'
-    required: false
-    default: 'false'
   osc_account:
     description: "Accout alias to target"
     required: true
@@ -61,7 +57,7 @@ runs:
   steps:
     - name: 🔒️ Import Secrets from Vault
       id: import-secrets
-      uses: hashicorp/vault-action@v3
+      uses: hashicorp/vault-action@v4
       with:
         url: ${{ inputs.vault_url }}
         method: jwt
@@ -72,7 +68,7 @@ runs:
         secrets: |
           osc-${{ inputs.osc_account }}/${{ inputs.vault_creds_type }}/${{ inputs.vault_role }} access_key | OSC_ACCESS_KEY ;
           osc-${{ inputs.osc_account }}/${{ inputs.vault_creds_type }}/${{ inputs.vault_role }} secret_key | OSC_SECRET_KEY ;
-          osc-${{ inputs.osc_account }}/config region | OSC_REGION ;
+          osc-${{ inputs.osc_account }}/config region | OSC_REGION
 
     - name: 🧹 Register Frieza Clean
       uses: outscale/frieza-github-actions/frieza-clean@68ffd39d7e181f3548369e332242b329b04a3182 # Pinning to master/commit SHA
@@ -86,13 +82,6 @@ runs:
         ignore_cleanup_failure: ${{ inputs.ignore_cleanup_failure }}
         providers: ${{ inputs.providers }}
         post_script: |
-          if [ "${{ inputs.skip_token_revocation }}" != "true" ]; then
-            echo "Safe post-job phase reached. Revoking Vault token..."
-            vault_url_clean="${{ inputs.vault_url }}"
-            vault_url_clean="${vault_url_clean%/}"
-            
-            headers=(-s -X POST -H "X-Vault-Token: ${{ steps.import-secrets.outputs.vault_token }}")
-            curl "${headers[@]}" "$vault_url_clean/v1/auth/token/revoke-self" || echo "Token revocation skipped or failed."
-          else
-            echo "Vault token revocation is deactivated."
-          fi
+          curl -XPOST -sv \
+            -H "X-Vault-Token: ${{ steps.import-secrets.outputs.vault_token }}" \
+            http://127.0.0.1:8200/v1/auth/token/revoke-self
