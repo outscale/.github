@@ -5,7 +5,7 @@ inputs:
   plumber-threshold:
     description: 'Plumber compliance threshold (0-100)'
     required: false
-    default: '80'
+    default: '100'
   plumber-config-file:
     description: 'Path to .plumber.yaml config file'
     required: false
