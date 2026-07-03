@@ -1,0 +1,54 @@
+name: 'Tag PR'
+description: 'Automatically label a PR based on the title starting gitmoji'
+
+runs:
+  using: composite
+  steps:
+    - name: 🔖 Tag PR
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      with:
+        script: |
+          const pr = context.payload.pull_request
+          const title = pr.title
+          const labels = pr.labels
+
+          const expected = {
+            "🐛": "kind/bug",
+            ":bug:": "kind/bug",
+            "👷": "skip-changelog",
+            ":construction_worker:": "skip-changelog",
+            "✨": "kind/feature",
+            ":sparkles:": "kind/feature",
+            "⬆️": "dependencies",
+            ":arrow_up:": "dependencies",
+            "🏗️": "kind/refactoring",
+            ":building_construction:": "kind/refactoring",
+            "♻️": "kind/refactoring",
+            ":recycle:": "kind/refactoring",
+            "⚰️": "kind/cleanup",
+            ":coffin:": "kind/cleanup",
+            "📝": "kind/documentation",
+            ":memo:": "kind/documentation",
+            "🗑️": "kind/deprecation",
+            ":wastebasket:": "kind/deprecation",
+          }
+          for (const [gitmoji, expectedLabel] of Object.entries(expected)) {
+            if (title.startsWith(gitmoji) && !labels.some((label) => label.title == expectedLabel)) {
+              await github.rest.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: [expectedLabel]
+              })
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `🔖 **auto-tagging**: Adding label "${expectedLabel}"`
+              });
+              return
+            }
+          }
+          if (!labels.some((label) => label.title == "dependencies" || label.title == "skip-changelog" || label.title.startsWith("kind"))) {
+            core.setFailed(`PR has no label, add either "dependencies", "skip-changelog" or any "kind/[something]" label or use gitmoji in PR title`);
+          }
