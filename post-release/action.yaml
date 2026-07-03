@@ -1,0 +1,79 @@
+name: 'Post release processing'
+description: 'Update CHANGELOG and update version in YAML files, and create a PR with the modifications'
+
+inputs:
+  tag:
+    description: 'Tag of new version (default: github.event.release.tag_name)'
+    required: false
+  changelog:
+    description: 'CHANGELOG path'
+    required: false
+  yq_version:
+    description: yq version to use
+    required: false
+    default: v4.53.3
+  update_version_file:
+    description: 'A YAML file where to configure the version'
+    required: false
+  update_version_path:
+    description: 'the yq path where to set the new version'
+    required: false
+  github_token:
+    description: 'PAT to use for signing the commit (default: use github.token)'
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: ⬇️ Set up gitsign
+      if: ${{ inputs.github_token != '' }}
+      uses: chainguard-dev/actions/setup-gitsign@f0be69916b439d0fcced2451b23d0f27cd46d545 # v1.6.26
+    - name: 📝 Update CHANGELOG
+      if: ${{ inputs.changelog != '' }}
+      shell: bash
+      env:
+        CHANGELOG: ${{ inputs.changelog }}
+        tag: ${{ inputs.tag || github.event.release.tag_name }}
+      run: |
+          set -ex
+          head -2 ${CHANGELOG} > ${CHANGELOG}.tmp
+          date=`date '+%Y%m%d'`
+          echo "## ${{ env.tag }} - $date" >> ${CHANGELOG}.tmp
+          cat << EOF >> ${CHANGELOG}.tmp
+            ${{ github.event.release.body }}
+          EOF
+          tail +2 ${CHANGELOG} >> ${CHANGELOG}.tmp
+          mv ${CHANGELOG}.tmp ${CHANGELOG}
+          git diff ${CHANGELOG}
+    - name: 📝 Update tag
+      if: ${{ inputs.update_version_file != '' }}
+      shell: bash
+      env:
+        yq_version: ${{ inputs.yq_version }}
+        tag: ${{ inputs.tag || github.event.release.tag_name }}
+        update_version_file: ${{ inputs.update_version_file }}
+        update_version_path: ${{ inputs.update_version_path }}
+      run: |
+        set -ex
+        curl -sSL --retry 5 --retry-all-errors https://github.com/mikefarah/yq/releases/download/${{ env.yq_version }}/yq_linux_amd64 -o yq
+        chmod +x yq
+        ./yq -i "${{ env.update_version_path}} = strenv(tag)" ${{ env.update_version_file}}
+        git diff ${{ env.update_version_file}}
+    - name: 🏗️ Create Pull Request
+      uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+      with:
+        committer: "Outscale Bot <opensource+bot@outscale.com>"
+        author: "Outscale Bot <opensource+bot@outscale.com>"
+        commit-message: "🚀 ${{ env.tag }}"
+        body: |
+          Automatic PR based on tool release.
+        title: "🚀 ${{ env.tag }}"
+        token: "${{ env.token }}"
+        branch: changelog-${{ env.tag }}
+        delete-branch: true
+        base: main
+        branch-token: ${{ github.token }}
+        labels: "skip-changelog"
+      env:
+        tag: ${{ github.event.release.tag_name }}
+        token: ${{ inputs.github_token || github.token }}
