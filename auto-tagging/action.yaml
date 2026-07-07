@@ -10,7 +10,9 @@ runs:
         script: |
           const pr = context.payload.pull_request
           const title = pr.title
+          console.log(`Title: ${title}`);
           const labels = pr.labels
+          console.log("Existing labels: "+JSON.stringify(labels, null, 2));
 
           const expected = {
             "🐛": "kind/bug",
@@ -25,6 +27,10 @@ runs:
             ":building_construction:": "kind/refactoring",
             "♻️": "kind/refactoring",
             ":recycle:": "kind/refactoring",
+            "🦖": "kind/other",
+            ":t-rex:": "kind/other",
+            "💩": "kind/other",
+            ":poop:": "kind/other",
             "⚰️": "kind/cleanup",
             ":coffin:": "kind/cleanup",
             "📝": "kind/documentation",
@@ -33,13 +39,15 @@ runs:
             ":wastebasket:": "kind/deprecation",
           }
           for (const [gitmoji, expectedLabel] of Object.entries(expected)) {
-            if (title.startsWith(gitmoji) && !labels.some((label) => label.title == expectedLabel)) {
+            if (title.startsWith(gitmoji) && !labels.some((label) => label.name == expectedLabel)) {
+              console.log(`Found ${gitmoji} prefix, adding ${expectedLabel} label`);
               await github.rest.issues.addLabels({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 labels: [expectedLabel]
               })
+              console.log("Adding comment")
               await github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
@@ -49,6 +57,7 @@ runs:
               return
             }
           }
-          if (!labels.some((label) => label.title == "dependencies" || label.title == "skip-changelog" || label.title.startsWith("kind"))) {
+          console.log("No label added");
+          if (!labels.some((label) => label.name == "dependencies" || label.name == "skip-changelog" || label.name.startsWith("kind"))) {
             core.setFailed(`PR has no label, add either "dependencies", "skip-changelog" or any "kind/[something]" label or use gitmoji in PR title`);
           }
