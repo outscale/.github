@@ -37,9 +37,9 @@ runs:
       run: |
           set -ex
           head -2 ${CHANGELOG} > ${CHANGELOG}.tmp
-          date=`date '+%Y%m%d'`
-          echo "## ${{ env.tag }} - $date" >> ${CHANGELOG}.tmp
-          cat << EOF >> ${CHANGELOG}.tmp
+          date=`date '+%Y-%m-%d'`
+          echo "## [${{ env.tag }}](${{ github.event.release.html_url }}) - $date" >> ${CHANGELOG}.tmp
+          cat << EOF | egrep -iv "Release notes generated|What's Changed|Full Changelog|New Contributors|made their first contribution" | head -n -3 >> ${CHANGELOG}.tmp
             ${{ github.event.release.body }}
           EOF
           tail +2 ${CHANGELOG} >> ${CHANGELOG}.tmp
