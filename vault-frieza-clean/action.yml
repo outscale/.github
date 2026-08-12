@@ -1,0 +1,87 @@
+name: 'Vault with Frieza Cleanup'
+description: 'Log in to Vault, fetch Outscale credentials, initialize Frieza, and auto-revoke the Vault token at job completion.'
+
+inputs:
+  vault_url:
+    description: 'The URL for the Vault endpoint'
+    required: false
+    default: 'http://127.0.0.1:8200/'
+  vault_role:
+    description: 'Vault role for JWT/OIDC auth method'
+    required: true
+  vault_path:
+    description: 'The Vault path for the auth method'
+    required: false
+    default: 'github-action'
+  frieza_version:
+    description: 'Frieza version to use. Default is latest.'
+    required: false
+    default: 'latest'
+  clean_timeout:
+    description: 'Timeout when cleaning resources.'
+    required: false
+    default: '5m'
+  error_on_dirty:
+    description: 'Exit in error when the account is not clean.'
+    required: false
+    default: 'false'
+  ignore_cleanup_failure:
+    description: 'Ignore cleanup failures and continue.'
+    required: false
+    default: 'false'
+  providers:
+    description: 'List of systems (comma-separated: outscale_oapi,outscale_oos,outscale_oks,...).'
+    required: false
+    default: 'outscale_oapi'
+  osc_account:
+    description: "Accout alias to target"
+    required: true
+  vault_creds_type:
+    description: "type of role"
+    required: false
+    default: "root-creds"
+
+outputs:
+  access_key:
+    description: "ak"
+    value: ${{ steps.import-secrets.outputs.OSC_ACCESS_KEY }}
+  secret_key:
+    description: "sk"
+    value: ${{ steps.import-secrets.outputs.OSC_SECRET_KEY }}
+  region:
+    description: "Outscale region used"
+    value: ${{ steps.import-secrets.outputs.OSC_REGION }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 🔒️ Import Secrets from Vault
+      id: import-secrets
+      uses: hashicorp/vault-action@v4
+      with:
+        url: ${{ inputs.vault_url }}
+        method: jwt
+        path: ${{ inputs.vault_path }}
+        exportEnv: true
+        outputToken: true
+        role: ${{ inputs.vault_role }}
+        secrets: |
+          osc-${{ inputs.osc_account }}/${{ inputs.vault_creds_type }}/${{ inputs.vault_role }} access_key | OSC_ACCESS_KEY ;
+          osc-${{ inputs.osc_account }}/${{ inputs.vault_creds_type }}/${{ inputs.vault_role }} secret_key | OSC_SECRET_KEY ;
+          osc-${{ inputs.osc_account }}/config region | OSC_REGION
+
+    - name: 🧹 Register Frieza Clean
+      uses: outscale/frieza-github-actions/frieza-clean@68ffd39d7e181f3548369e332242b329b04a3182 # Pinning to master/commit SHA
+      with:
+        access_key: ${{ steps.import-secrets.outputs.OSC_ACCESS_KEY }}
+        secret_key: ${{ steps.import-secrets.outputs.OSC_SECRET_KEY }}
+        region: ${{ steps.import-secrets.outputs.OSC_REGION }}
+        frieza_version: ${{ inputs.frieza_version }}
+        clean_timeout: ${{ inputs.clean_timeout }}
+        error_on_dirty: ${{ inputs.error_on_dirty }}
+        ignore_cleanup_failure: ${{ inputs.ignore_cleanup_failure }}
+        providers: ${{ inputs.providers }}
+        post_script: |
+          curl -XPOST -sv \
+            -H "X-Vault-Token: ${{ steps.import-secrets.outputs.vault_token }}" \
+            http://127.0.0.1:8200/v1/auth/token/revoke-self
