@@ -75,7 +75,7 @@ runs:
         path=${{ github.action_path }}/plumber.yaml
         echo "plumber-config-file=$path" >> $GITHUB_ENV
 
-    - uses: getplumber/plumber@1f0d4be4239f44f26a851c758d2cb7112919dd0c # v0.4.57
+    - uses: getplumber/plumber@0710cef67930a54cc9d9630d0b7166bf702bd118 # v0.4.59
       with:
         threshold: ${{ inputs.plumber-threshold }}
         config-file: ${{ inputs.plumber-config-file || env.plumber-config-file }}
