@@ -23,7 +23,7 @@ runs:
         echo "path=$ACTION_PATH/gitleaks.toml" >> "$GITHUB_OUTPUT"
 
     - name: Scan for secrets
-      uses: gitleaks/gitleaks-action@v3
+      uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3
       env:
         GITHUB_TOKEN: ${{ github.token }}
         GITLEAKS_LICENSE: ${{ inputs.gitleaks-license }}
