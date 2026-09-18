@@ -1,0 +1,31 @@
+name: 'Gitleaks Secret Scan'
+description: 'Run Gitleaks with the shared configuration'
+
+inputs:
+  gitleaks-license:
+    description: 'Gitleaks organization license from secrets.GITLEAKS_LICENSE'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Check license and locate shared configuration
+      id: config
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        GITLEAKS_LICENSE: ${{ inputs.gitleaks-license }}
+      run: |
+        if [[ -z "$GITLEAKS_LICENSE" ]]; then
+          echo '::error::GITLEAKS_LICENSE is unavailable. Check the organization secret repository access. Fork PRs do not receive Actions secrets.'
+          exit 1
+        fi
+        echo "path=$ACTION_PATH/gitleaks.toml" >> "$GITHUB_OUTPUT"
+
+    - name: Scan for secrets
+      uses: gitleaks/gitleaks-action@v3
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        GITLEAKS_LICENSE: ${{ inputs.gitleaks-license }}
+        GITLEAKS_CONFIG: ${{ steps.config.outputs.path }}
+        GITLEAKS_ENABLE_COMMENTS: 'false'
