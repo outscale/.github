@@ -27,7 +27,7 @@ runs:
   steps:
     - name: ⬇️ Set up gitsign
       if: ${{ inputs.github_token != '' }}
-      uses: chainguard-dev/actions/setup-gitsign@4d37df0d85a91f619edc34a8803323033cdcb124 # v1.6.27
+      uses: chainguard-dev/actions/setup-gitsign@0bacfe710021b5ad6d8886a53a34c40072f2fc90 # v1.6.36
     - name: 📝 Update CHANGELOG
       if: ${{ inputs.changelog != '' }}
       shell: bash
