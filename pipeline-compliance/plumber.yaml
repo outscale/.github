@@ -66,6 +66,7 @@ github:
           # ── Kubernetes ──────────────────────────────────────────────
           - azure/setup-kubectl # Install kubectl
           - azure/setup-helm # Install Helm
+          - imranismail/setup-kustomize # Install Kustomize
 
           # ── Infrastructure as Code ──────────────────────────────────
           - hashicorp/setup-terraform # Install Terraform
