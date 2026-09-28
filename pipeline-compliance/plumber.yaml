@@ -413,7 +413,8 @@ github:
         - gradle/publish-plugin
         - softprops/action-gh-release
         - ncipollo/release-action
-        - goreleaser/goreleaser-action
+        # goreleaser/goreleaser-action
+        # it can run with --snapshot and therefore isn't inherently a publisher
         - crazy-max/ghaction-docker-buildx
         - changesets/action
       # Cache-restoring actions AND their per-action semantics. mode:
