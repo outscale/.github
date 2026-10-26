@@ -89,6 +89,7 @@ github:
 
           # ── Package managers ────────────────────────────────────────
           - Homebrew/actions/setup-homebrew # Configure Homebrew
+          - cachix/install-nix-action # Install Nix package manager
 
           # ── Signing ─────────────────────────────────────────────────
           - crazy-max/ghaction-import-gpg # Import GPG signing keys
