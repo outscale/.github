@@ -16,7 +16,7 @@ inputs:
   clean_timeout:
     description: 'Timeout when cleaning resources.'
     required: false
-    default: '5m'
+    default: '15m'
   error_on_dirty:
     description: 'Exit in error when the account is not clean.'
     required: false
