@@ -90,6 +90,10 @@ runs:
         exclude_resource_types: ${{ inputs.exclude_resource_types }}
         bypass_deletion_protection: ${{ inputs.bypass_deletion_protection }}
         post_script: |
-          curl -XPOST -sv \
+          curl -XPOST \
+            --silent --show-error \
+            --retry 3 \
+            --retry-all-errors \
+            --retry-max-time 60 \
             -H "X-Vault-Token: ${{ steps.import-secrets.outputs.vault_token }}" \
             http://127.0.0.1:8200/v1/auth/token/revoke-self
