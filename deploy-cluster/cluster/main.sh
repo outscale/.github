@@ -46,9 +46,7 @@ export OSC_ALLOW_FROM_CAPI="$mip/32"
 export OSC_NAT_IP_POOL=caposc
 export KUBERNETES_VERSION=`echo $OSC_IMAGE_NAME|sed 's/.*\(v1[.0-9]*\).*/\1/'`
 
-pwd
-ls
-cat ./cluster-template.yaml
+clusterctl upgrade apply --contract v1beta1
 
 clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=$WORKER_COUNT -n $OSC_CLUSTER_NAME -i outscale --from https://github.com/outscale/.github/blob/vault_action/deploy-cluster/cluster/cluster-template-secure.yaml > clusterapi.yaml
 # clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=$WORKER_COUNT -n $OSC_CLUSTER_NAME -i outscale --flavor secure-opensource > clusterapi.yaml
