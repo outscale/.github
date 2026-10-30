@@ -9,9 +9,9 @@ RUN echo "deb [signed-by=/usr/share/keyrings/helm.gpg] https://packages.buildkit
 
 RUN apt-get update && apt-get install -y helm=3.20.0-1 --no-install-recommends && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN curl -sSL --retry 5 --retry-all-errors https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.10.8/clusterctl-linux-amd64 -o clusterctl && install clusterctl /usr/local/bin/clusterctl
-RUN curl -sSLO --retry 5 --retry-all-errors https://dl.k8s.io/release/v1.34.8/bin/linux/amd64/kubectl && install kubectl /usr/local/bin/kubectl
-RUN curl -sSL --retry 5 --retry-all-errors https://github.com/outscale/octl/releases/download/v0.0.30/octl_Linux_x86_64 -o octl && install octl /usr/local/bin/octl
+RUN curl -sSL --retry 5 --retry-all-errors https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.10.10/clusterctl-linux-amd64 -o clusterctl && install clusterctl /usr/local/bin/clusterctl
+RUN curl -sSLO --retry 5 --retry-all-errors https://dl.k8s.io/release/v1.36.5/bin/linux/amd64/kubectl && install kubectl /usr/local/bin/kubectl
+RUN curl -sSL --retry 5 --retry-all-errors https://github.com/outscale/octl/releases/download/v0.0.35/octl_Linux_x86_64 -o octl && install octl /usr/local/bin/octl
 
 COPY main.sh cleanup.sh /
 
