@@ -1,0 +1,75 @@
+name: 👷 Deploy a worload cluster
+description: This action bootstraps a Kube cluster using Cluster API.
+inputs:
+  OSC_ACCESS_KEY:
+    description: 'cluster access key (CSI/CCM)'
+    required: true
+  OSC_SECRET_KEY:
+    description: 'cluster secret key (CSI/CCM)'
+    required: true
+  OSC_REGION:
+    description: 'cluster region'
+    required: true
+  CLUSTER_NAME:
+    description: 'cluster name'
+    required: true
+  IMAGE_NAME:
+    description: 'image name'
+    required: true
+  IMAGE_ACCOUNT_ID:
+    description: 'image account id'
+    default: ""
+  OSC_VM_TYPE:
+    description: 'VM type'
+    default: "tinav6.c4r8p2"
+  WORKER_COUNT:
+    description: 'number of worker nodes'
+    default: "1"
+  CCM:
+    description: 'deploy ccm'
+    default: "true"
+  CERT_MANAGER:
+    description: 'deploy cert-manager'
+    default: "false"
+  KUSTOMIZE_PATH:
+    description: 'path of kustomization config'
+outputs:
+  KUBECONFIG:
+    description: 'Kubeconfig path'
+    value: ${{ steps.cluster.outputs.KUBECONFIG }}
+  MANAGEMENT_KUBECONFIG:
+    description: 'Kubeconfig path for management cluster'
+    value: ${{ steps.cluster.outputs.MANAGEMENT_KUBECONFIG }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 🔒️ Import Secrets from Vault
+      id: import-secrets
+      uses: outscale/.github/vault@vault_action # @2806dfed40e08ccd51bee7edcac524fd02a67f06 # v1.3.0
+      with:
+        vault_role: outscale-cluster-api-provider-outscale
+        osc_account: birch
+    - name: 👷 Deploy management cluster
+      id: cluster
+      uses: outscale/.github/deploy-cluster/cluster@vault_action
+      with:
+        OKS_ACCESS_KEY: ${{ steps.import-secrets.outputs.access_key }}
+        OKS_SECRET_KEY: ${{ steps.import-secrets.outputs.secret_key }}
+        OKS_REGION: ${{ steps.import-secrets.outputs.region }}
+        OSC_ACCESS_KEY: ${{ inputs.OSC_ACCESS_KEY }}
+        OSC_SECRET_KEY: ${{ inputs.OSC_SECRET_KEY }}
+        OSC_REGION: ${{ inputs.OSC_REGION }}
+        CLUSTER_NAME: ${{ inputs.CLUSTER_NAME }}
+        IMAGE_NAME: ${{ inputs.IMAGE_NAME }}
+        IMAGE_ACCOUNT_ID: ${{ inputs.IMAGE_ACCOUNT_ID }}
+        OSC_VM_TYPE: ${{ inputs.OSC_VM_TYPE }}
+        WORKER_COUNT: ${{ inputs.WORKER_COUNT }}
+        CCM: ${{ inputs.CCM }}
+        CERT_MANAGER: ${{ inputs.CERT_MANAGER }}
+        KUSTOMIZE_PATH: ${{ inputs.KUSTOMIZE_PATH }}
+    - name: 🔒️ Revoke management token
+      if: ${{ always() }}
+      uses: outscale/.github/vault-revoke@vault_action # @2806dfed40e08ccd51bee7edcac524fd02a67f06 # v1.3.0
+      with:
+        vault_token: ${{ steps.cluster.outputs.vault_token }}
