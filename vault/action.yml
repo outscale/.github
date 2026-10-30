@@ -1,0 +1,58 @@
+name: 'Vault credentials'
+description: 'Log in to Vault, fetch Outscale credentials.'
+
+inputs:
+  vault_url:
+    description: 'The URL for the Vault endpoint'
+    required: false
+    default: 'http://127.0.0.1:8200/'
+  vault_role:
+    description: 'Vault role for JWT/OIDC auth method'
+    required: true
+  vault_path:
+    description: 'The Vault path for the auth method'
+    required: false
+    default: 'github-action'
+  osc_account:
+    description: "Account alias to target"
+    required: true
+  vault_creds_type:
+    description: "type of role"
+    required: false
+    default: "root-creds"
+
+outputs:
+  access_key:
+    description: "ak"
+    value: ${{ steps.import-secrets.outputs.OSC_ACCESS_KEY }}
+  secret_key:
+    description: "sk"
+    value: ${{ steps.import-secrets.outputs.OSC_SECRET_KEY }}
+  region:
+    description: "Outscale region used"
+    value: ${{ steps.import-secrets.outputs.OSC_REGION }}
+  account_id:
+    description: "Outscale account id"
+    value: ${{ steps.import-secrets.outputs.ACCOUNT_ID }}
+  vault_token:
+    description: "Vault token"
+    value: ${{ steps.import-secrets.outputs.vault_token }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 🔒️ Import Secrets from Vault
+      id: import-secrets
+      uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc #v4.0.0
+      with:
+        url: ${{ inputs.vault_url }}
+        method: jwt
+        path: ${{ inputs.vault_path }}
+        exportEnv: true
+        outputToken: true
+        role: ${{ inputs.vault_role }}
+        secrets: |
+          osc-${{ inputs.osc_account }}/${{ inputs.vault_creds_type }}/${{ inputs.vault_role }} access_key | OSC_ACCESS_KEY ;
+          osc-${{ inputs.osc_account }}/${{ inputs.vault_creds_type }}/${{ inputs.vault_role }} secret_key | OSC_SECRET_KEY ;
+          osc-${{ inputs.osc_account }}/config region | OSC_REGION ;
+          osc-${{ inputs.osc_account }}/config account_id | ACCOUNT_ID
