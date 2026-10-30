@@ -37,8 +37,8 @@ inputs:
     required: false
     default: 'false'
   osc_account:
-    description: "Accout alias to target"
-    required: true
+    description: "Account alias to target"
+    required: false
   vault_creds_type:
     description: "type of role"
     required: false
@@ -57,10 +57,31 @@ outputs:
   account_id:
     description: "Outscale account id"
     value: ${{ steps.import-secrets.outputs.ACCOUNT_ID }}
+  osc_account:
+    description: "Account alias used"
+    value: ${{ steps.account.outputs.osc_account }}
 
 runs:
   using: 'composite'
   steps:
+    - name: 🔎 Configure osc_account
+      id: account
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      with:
+        script: |
+          if (process.env.OSC_ACCOUNT_INPUT != "") {
+            const account = process.env.OSC_ACCOUNT_INPUT
+            core.info(`Using ${account} account from inputs`)
+            core.setOutput('osc_account', account);
+          } else if (process.env.OSC_ACCOUNT != "") {
+            const account = process.env.OSC_ACCOUNT
+            core.info(`Using ${account} account from env`)
+            core.setOutput('osc_account', account);
+          } else {
+            core.setFailed('osc_account is not configured properly')
+          }
+      env:
+        OSC_ACCOUNT_INPUT: ${{ inputs.osc_account }}
     - name: 🔒️ Import Secrets from Vault
       id: import-secrets
       uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc #v4.0.0
@@ -72,10 +93,10 @@ runs:
         outputToken: true
         role: ${{ inputs.vault_role }}
         secrets: |
-          osc-${{ inputs.osc_account }}/${{ inputs.vault_creds_type }}/${{ inputs.vault_role }} access_key | OSC_ACCESS_KEY ;
-          osc-${{ inputs.osc_account }}/${{ inputs.vault_creds_type }}/${{ inputs.vault_role }} secret_key | OSC_SECRET_KEY ;
-          osc-${{ inputs.osc_account }}/config region | OSC_REGION ;
-          osc-${{ inputs.osc_account }}/config account_id | ACCOUNT_ID
+          osc-${{ steps.account.outputs.osc_account }}/${{ inputs.vault_creds_type }}/${{ inputs.vault_role }} access_key | OSC_ACCESS_KEY ;
+          osc-${{ steps.account.outputs.osc_account }}/${{ inputs.vault_creds_type }}/${{ inputs.vault_role }} secret_key | OSC_SECRET_KEY ;
+          osc-${{ steps.account.outputs.osc_account }}/config region | OSC_REGION ;
+          osc-${{ steps.account.outputs.osc_account }}/config account_id | ACCOUNT_ID
 
     - name: 🧹 Register Frieza Clean
       uses: outscale/frieza-github-actions/frieza-clean@d361dd8cc864cfb9575429ee54fde4a0e8e7b124 # v0.17.2
