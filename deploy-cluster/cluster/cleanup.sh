@@ -1,9 +1,6 @@
 #!/bin/bash
 set -ex
-RUNNER_NAME=$1
-OSC_CLUSTER_NAME=$4
-
-cluster_name=`echo $RUNNER_NAME|tr '[:upper:]' '[:lower:]'|sed -r 's/-[a-z0-9]+$//'|cut -c1-40|sed -r 's/[^a-z0-9-]+/-/g'`
+OSC_CLUSTER_NAME=$3
 
 # do not wait if stuck, frieza will purge everything
-octl kube kubectl --cluster $cluster_name --profile management -- delete ns $OSC_CLUSTER_NAME --timeout 1m || /bin/true
+octl kube kubectl --cluster management --profile management -- delete ns $OSC_CLUSTER_NAME --timeout 1m || /bin/true
