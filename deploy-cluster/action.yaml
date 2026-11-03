@@ -48,14 +48,14 @@ runs:
   steps:
     - name: 🔒️ Import Secrets from Vault
       id: import-secrets
-      uses: outscale/.github/vault-additional@854f0286b0ae38226218e02126e8fda7b8bd4ff7 # main
+      uses: outscale/.github/vault-additional@3473e386226175ad703740601d34849b9b61364f # main
       with:
         vault_role: outscale-cluster-api-provider-outscale
         osc_account: birch
         vault_token: ${{ inputs.vault_token }}
     - name: 👷 Deploy management cluster
       id: cluster
-      uses: outscale/.github/deploy-cluster/cluster@854f0286b0ae38226218e02126e8fda7b8bd4ff7 # main
+      uses: outscale/.github/deploy-cluster/cluster@3473e386226175ad703740601d34849b9b61364f # main
       with:
         OKS_ACCESS_KEY: ${{ steps.import-secrets.outputs.access_key }}
         OKS_SECRET_KEY: ${{ steps.import-secrets.outputs.secret_key }}
