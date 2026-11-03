@@ -1,4 +1,4 @@
-name: 👷 Deploy a worload cluster
+name: 👷 Deploy a cluster
 description: This action bootstraps a Kube cluster using Cluster API.
 inputs:
   OSC_ACCESS_KEY:
@@ -26,22 +26,31 @@ inputs:
     description: 'number of worker nodes'
     default: "1"
   CCM:
-    description: 'deploy ccm'
+    description: 'deploy CCM'
     default: "true"
+  PRELOADER_SNAPSHOT:
+    description: 'take a preloader snapshot'
+    default: false
+  PRELOADER_IMAGE:
+    description: 'preloader image'
+    default: "outscale/k8s-image-preloader"
+  PRELOADER_VERSION:
+    description: 'preloader image version'
+    default: "v0.3.0"
   CERT_MANAGER:
     description: 'deploy cert-manager'
     default: "false"
   KUSTOMIZE_PATH:
     description: 'path of kustomization config'
+  vault_role:
+    description: 'Vault role for JWT/OIDC auth method'
+    required: true
   vault_token:
     description: 'existing vault token'
+    required: true
 outputs:
-  KUBECONFIG:
-    description: 'Kubeconfig path'
-    value: ${{ steps.cluster.outputs.KUBECONFIG }}
-  MANAGEMENT_KUBECONFIG:
-    description: 'Kubeconfig path for management cluster'
-    value: ${{ steps.cluster.outputs.MANAGEMENT_KUBECONFIG }}
+  SNAPSHOT_ID:
+    description: "ID of the preloader snapshot"
 
 runs:
   using: 'composite'
@@ -50,24 +59,39 @@ runs:
       id: import-secrets
       uses: outscale/.github/vault-additional@854f0286b0ae38226218e02126e8fda7b8bd4ff7 # main
       with:
-        vault_role: outscale-cluster-api-provider-outscale
+        vault_role: ${{ inputs.vault_role }}
         osc_account: birch
         vault_token: ${{ inputs.vault_token }}
+    - name: ⬇️ Setup clusterctl
+      shell: bash
+      run: |
+        curl -sSL --retry 5 --retry-all-errors https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.10.10/clusterctl-linux-amd64 -o clusterctl && install clusterctl /usr/local/bin/clusterctl
     - name: 👷 Deploy management cluster
       id: cluster
-      uses: outscale/.github/deploy-cluster/cluster@854f0286b0ae38226218e02126e8fda7b8bd4ff7 # main
-      with:
+      shell: bash
+      run: |
+        ${{ github.action_path }}/setup.sh
+      env:
         OKS_ACCESS_KEY: ${{ steps.import-secrets.outputs.access_key }}
         OKS_SECRET_KEY: ${{ steps.import-secrets.outputs.secret_key }}
         OKS_REGION: ${{ steps.import-secrets.outputs.region }}
         OSC_ACCESS_KEY: ${{ inputs.OSC_ACCESS_KEY }}
         OSC_SECRET_KEY: ${{ inputs.OSC_SECRET_KEY }}
         OSC_REGION: ${{ inputs.OSC_REGION }}
-        CLUSTER_NAME: ${{ inputs.CLUSTER_NAME }}
-        IMAGE_NAME: ${{ inputs.IMAGE_NAME }}
+        OSC_CLUSTER_NAME: ${{ inputs.CLUSTER_NAME }}
+        OSC_IMAGE_NAME: ${{ inputs.IMAGE_NAME }}
         IMAGE_ACCOUNT_ID: ${{ inputs.IMAGE_ACCOUNT_ID }}
         OSC_VM_TYPE: ${{ inputs.OSC_VM_TYPE }}
         WORKER_COUNT: ${{ inputs.WORKER_COUNT }}
         CCM: ${{ inputs.CCM }}
         CERT_MANAGER: ${{ inputs.CERT_MANAGER }}
         KUSTOMIZE_PATH: ${{ inputs.KUSTOMIZE_PATH }}
+    - name: 📸 Preloader snapshot
+      if: ${{ inputs.PRELOADER_SNAPSHOT == 'true' }}
+      shell: bash
+      run: |
+        ${{ github.action_path }}/snapshot.sh
+      env:
+        KUBECONFIG : ${{ github.workspace }}/workload.kubeconfig
+        ACTION_PATH: ${{ github.action_path }}
+        PRELOADER_IMAGE: "${{ inputs.PRELOADER_IMAGE }}:${{ inputs.PRELOADER_VERSION }}"
