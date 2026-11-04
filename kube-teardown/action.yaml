@@ -1,0 +1,16 @@
+name: 👷 Teardown a cluster
+description: This action tears down a Kube cluster using Cluster API.
+inputs:
+  CLUSTER_NAME:
+    description: 'cluster name'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 👷 Teardown cluster
+      shell: bash
+      run:
+        ${{ github.action_path }}/teardown.sh
+      env:
+        OSC_CLUSTER_NAME: ${{ inputs.CLUSTER_NAME }}
