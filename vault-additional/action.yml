@@ -48,7 +48,7 @@ runs:
         url: ${{ inputs.vault_url }}
         token: ${{ inputs.vault_token }}
         path: ${{ inputs.vault_path }}
-        exportEnv: true
+        exportEnv: false
         secrets: |
           osc-${{ inputs.osc_account }}/${{ inputs.vault_creds_type }}/${{ inputs.vault_role }} access_key | OSC_ACCESS_KEY ;
           osc-${{ inputs.osc_account }}/${{ inputs.vault_creds_type }}/${{ inputs.vault_role }} secret_key | OSC_SECRET_KEY ;

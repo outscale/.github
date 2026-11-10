@@ -20,7 +20,8 @@ clusterctl init -i outscale || clusterctl upgrade apply --contract v1beta1
 export OSC_SUBREGION_NAME=${OSC_REGION}a
 ip=`curl -s -S --retry 5 --retry-all-errors https://api.ipify.org`
 export OSC_ALLOW_FROM="$ip/32"
-mip=`kubectl run --image curlimages/curl:8.14.1 getip --restart=Never -ti --rm -q -- curl -s -S --retry 5 --retry-all-errors https://api.ipify.org`
+mip=`kubectl get nodes -o custom-columns=IP:.metadata.labels.public-ip --no-headers=true`
+# mip=`kubectl run --image curlimages/curl:8.14.1 getip --restart=Never -ti --rm -q -- curl -s -S --retry 5 --retry-all-errors https://api.ipify.org`
 export OSC_ALLOW_FROM_CAPI="$mip/32"
 export OSC_NAT_IP_POOL=caposc
 export KUBERNETES_VERSION=`echo $OSC_IMAGE_NAME|sed 's/.*\(v1[.0-9]*\).*/\1/'`
@@ -28,7 +29,7 @@ if [ -z "$WORKER_COUNT" ]; then
   WORKER_COUNT=1
 fi
 
-clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=$WORKER_COUNT -n $OSC_CLUSTER_NAME --from https://raw.githubusercontent.com/outscale/.github/refs/heads/vault_action/deploy-cluster/cluster/cluster-template.yaml > clusterapi.yaml
+clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=$WORKER_COUNT -n $OSC_CLUSTER_NAME --from $ACTION_PATH/cluster-template.yaml > clusterapi.yaml
 # clusterctl generate cluster $OSC_CLUSTER_NAME --kubernetes-version $KUBERNETES_VERSION --control-plane-machine-count=1 --worker-machine-count=$WORKER_COUNT -n $OSC_CLUSTER_NAME -i outscale --flavor secure-opensource > clusterapi.yaml
 
 kubectl create ns $OSC_CLUSTER_NAME || /bin/true
