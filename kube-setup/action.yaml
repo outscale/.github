@@ -1,12 +1,6 @@
 name: 👷 Deploy a cluster
 description: This action bootstraps a Kube cluster using Cluster API.
 inputs:
-  OSC_ACCESS_KEY:
-    description: 'cluster access key (CSI/CCM)'
-    required: true
-  OSC_SECRET_KEY:
-    description: 'cluster secret key (CSI/CCM)'
-    required: true
   OSC_REGION:
     description: 'cluster region'
     required: true
@@ -42,6 +36,8 @@ inputs:
     default: "false"
   KUSTOMIZE_PATH:
     description: 'path of kustomization config'
+  ALLOW_FROM:
+    description: 'Additional IP range to allow'
   vault_role:
     description: 'Vault role for JWT/OIDC auth method'
     required: true
@@ -55,9 +51,14 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: 🩹 Safe config for 💩 DNS
+      shell: bash
+      run: |
+        sed 's/options /options use-vc single-request attempts:5 /' < /etc/resolv.conf > /etc/resolv.conf.new
+        cat /etc/resolv.conf.new > /etc/resolv.conf
     - name: 🔒️ Import Secrets from Vault
       id: import-secrets
-      uses: outscale/.github/vault-additional@854f0286b0ae38226218e02126e8fda7b8bd4ff7 # main
+      uses: outscale/.github/vault-additional@main
       with:
         vault_role: ${{ inputs.vault_role }}
         osc_account: birch
@@ -72,11 +73,10 @@ runs:
       run: |
         ${{ github.action_path }}/setup.sh
       env:
+        ACTION_PATH: ${{ github.action_path }}
         OKS_ACCESS_KEY: ${{ steps.import-secrets.outputs.access_key }}
         OKS_SECRET_KEY: ${{ steps.import-secrets.outputs.secret_key }}
         OKS_REGION: ${{ steps.import-secrets.outputs.region }}
-        OSC_ACCESS_KEY: ${{ inputs.OSC_ACCESS_KEY }}
-        OSC_SECRET_KEY: ${{ inputs.OSC_SECRET_KEY }}
         OSC_REGION: ${{ inputs.OSC_REGION }}
         OSC_CLUSTER_NAME: ${{ inputs.CLUSTER_NAME }}
         OSC_IMAGE_NAME: ${{ inputs.IMAGE_NAME }}
@@ -86,6 +86,7 @@ runs:
         CCM: ${{ inputs.CCM }}
         CERT_MANAGER: ${{ inputs.CERT_MANAGER }}
         KUSTOMIZE_PATH: ${{ inputs.KUSTOMIZE_PATH }}
+        OSC_ALLOW_FROM_DEV: ${{ inputs.ALLOW_FROM }}
     - name: 📸 Preloader snapshot
       if: ${{ inputs.PRELOADER_SNAPSHOT == 'true' }}
       shell: bash
@@ -95,3 +96,4 @@ runs:
         KUBECONFIG : ${{ github.workspace }}/workload.kubeconfig
         ACTION_PATH: ${{ github.action_path }}
         PRELOADER_IMAGE: "${{ inputs.PRELOADER_IMAGE }}:${{ inputs.PRELOADER_VERSION }}"
+        OSC_REGION: ${{ inputs.OSC_REGION }}

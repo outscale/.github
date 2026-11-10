@@ -33,6 +33,7 @@ spec:
     allowFromIPRanges:
     - ${OSC_ALLOW_FROM}
     - ${OSC_ALLOW_FROM_CAPI}
+    - ${OSC_ALLOW_FROM_DEV}
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
