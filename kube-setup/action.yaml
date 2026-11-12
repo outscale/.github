@@ -47,6 +47,7 @@ inputs:
 outputs:
   SNAPSHOT_ID:
     description: "ID of the preloader snapshot"
+    value: ${{ steps.snapshot.outputs.SNAPSHOT_ID }}
 
 runs:
   using: 'composite'
@@ -88,6 +89,7 @@ runs:
         KUSTOMIZE_PATH: ${{ inputs.KUSTOMIZE_PATH }}
         OSC_ALLOW_FROM_DEV: ${{ inputs.ALLOW_FROM }}
     - name: 📸 Preloader snapshot
+      id: snapshot
       if: ${{ inputs.PRELOADER_SNAPSHOT == 'true' }}
       shell: bash
       run: |
