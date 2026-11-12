@@ -80,6 +80,7 @@ github:
           # ── Rust ────────────────────────────────────────────────────
           - dtolnay/rust-toolchain # Install Rust toolchains
           - actions-rust-lang/setup-rust-toolchain # Rust toolchain setup
+          - rust-lang/crates-io-auth-action # crates.io authentication for GitHub Actions
 
           # ── GitHub automation / releases ────────────────────────────
           - softprops/action-gh-release # Publish GitHub releases
