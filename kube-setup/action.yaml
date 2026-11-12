@@ -59,7 +59,7 @@ runs:
         cat /etc/resolv.conf.new > /etc/resolv.conf
     - name: 🔒️ Import Secrets from Vault
       id: import-secrets
-      uses: outscale/.github/vault-additional@a638a6d32db53dbde3f17c70894138535b57fadb # main
+      uses: outscale/.github/vault-additional@cc76c3e03f3c7a83a09914b1ed65b7fea5605fb8 # main
       with:
         vault_role: ${{ inputs.vault_role }}
         osc_account: birch
