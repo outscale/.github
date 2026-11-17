@@ -77,6 +77,9 @@ github:
           - goreleaser/goreleaser-action # GoReleaser
           - golangci/golangci-lint-action # golangci-lint
 
+          # ── Python ──────────────────────────────────────────────────
+          - astral-sh/setup-uv # Install uv (Python package manager)
+
           # ── Rust ────────────────────────────────────────────────────
           - dtolnay/rust-toolchain # Install Rust toolchains
           - actions-rust-lang/setup-rust-toolchain # Rust toolchain setup
